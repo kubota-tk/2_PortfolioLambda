@@ -16,7 +16,7 @@ jobs:
           name: Deploy to was from template
           command: |
             set -x
-            aws cloudformation deploy --template CloudFormation/resources.yml --stack-name 2_Portfolio_resources --capabilities CAPABILITY_NAMED_IAM
+            aws cloudformation deploy --template CloudFormation/resources.yml --stack-name PortfolioLambda-resources --capabilities CAPABILITY_NAMED_IAM
 
 workflows:
   circleci-PortfolioLambda-workflow:

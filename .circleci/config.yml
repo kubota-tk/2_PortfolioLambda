@@ -19,7 +19,7 @@ jobs:
             aws cloudformation deploy --template CloudFormation/resources.yml --stack-name 2_Portfolio_resources --capabilities CAPABILITY_NAMED_IAM
 
 workflows:
-  circleci-raisetech13-workflow:
+  circleci-PortfolioLambda-workflow:
     jobs:
       - execute-cloudformation
 

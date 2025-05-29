@@ -1,0 +1,196 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Lambda,APIgateway,Dynamodb for 2_PortfolioLambda 
+
+## Metadataの作成 ##
+
+Metadata:  
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Environment Setting
+        Parameters:
+          - ProjectName
+      - Label:
+          default: Lambda function Setting
+        Parameters:          
+          - LambdaFunctionName
+
+##　Parametersの作成　##
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: project name
+    Default: 2_PortfolioLambda
+##---Lambda---##
+  LambdaFunctionName:
+    Type: String
+    Description: lambda function name
+    Default: official_lambda_function_url
+
+##　Resourcesの作成　##
+Resources:
+
+## Lambdaの作成 ##
+  Lambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: portfolio-lambda-2025  #S3バケット名/フォルダ名
+        S3Key: python/official_lambda_function_url.zip  #S3キー名（ZIPファイル名）
+      FunctionName: !Ref LambdaFunctionName
+      Handler: !Sub "${LambdaFunctionName}.lambda_handler"
+      MemorySize: 128
+      Timeout: 3
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.13
+      Architectures:
+        - x86_64
+
+## IAM Role,Policy##
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub '${ProjectName}-Exe-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DeleteItem
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:UpdateItem
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${LambdaFunctionName}:*'
+
+## API Gatewayの作成 ##
+
+  ApiGatewayLambdaInvocationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-ApiGatwayLambdaInvocation-Role
+      Description: This role allows API Gateways to invoke Lambda functions.
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaRole
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AmazonKinesisFirehoseFullAccess
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+
+  Api:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub '${ProjectName}-rest-api'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  ApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref Api
+      ParentId: !GetAtt Api.RootResourceId
+      PathPart: !Ref LambdaFunctionName
+    DependsOn:
+      - Api 
+      - Lambda
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Sub "${LambdaFunctionName}"
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*"
+    DependsOn:
+      - ApiResource
+
+  RestApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: false
+      RestApiId: !Ref Api
+      ResourceId: !Ref ApiResource
+      AuthorizationType: NONE
+      HttpMethod: GET
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: GET
+        Credentials: !GetAtt ApiGatewayLambdaInvocationRole.Arn
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: ''
+        RequestTemplates:
+          application/json: ''
+        Uri: !Sub
+          - arn:aws:apigateway:${Region}:${Service}:${ActionType}/${ServiceApi}
+          - Region: !Sub ${AWS::Region} # AWSリージョン
+            Service: lambda # AWS のサービス
+            ActionType: path # アクションタイプ
+            ServiceApi: !Sub 2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Lambda}/invocations # アクション名/パスオーバーライド
+    DependsOn: ApiResource
+
+  Deployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId: !Ref Api
+    DependsOn:
+      - RestApiMethod
+
+  Stage:
+    Type: AWS::ApiGateay::Stage
+    Properties:
+      StageName: dev
+      Description: dev stage
+      RestApiId: !Ref Api
+      DeploymentId: !Ref Deployment
+    DependsOn: Deployment
+
+## DynamoDBの作成 ##
+  DynamoDBItemsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: lambda-apigateway  #Lambda関数に同名を指定
+      AttributeDefinitions:  #パーティションキーとソートキーのみ指定
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH  #パーティションキー
+      BillingMode: PAY_PER_REQUEST #従量課金
+
+
+

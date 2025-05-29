@@ -1,48 +1,45 @@
+import json
 import boto3
 
-# Define the DynamoDB table that Lambda will connect to
-table_name = "lambda-apigateway"
+# DynamoDB クライアントの作成
+dynamodb = boto3.client('dynamodb')
+table_name = 'lambda-apigateway'
 
-# Create the DynamoDB resource
-dynamo = boto3.resource('dynamodb').Table(table_name)
-
-# Define some functions to perform the CRUD operations
-def create(payload):
-    return dynamo.put_item(Item=payload['Item'])
-
-def read(payload):
-    return dynamo.get_item(Key=payload['Key'])
-
-def update(payload):
-    return dynamo.update_item(**{k: payload[k] for k in ['Key', 'UpdateExpression', 
-    'ExpressionAttributeNames', 'ExpressionAttributeValues'] if k in payload})
-
-def delete(payload):
-    return dynamo.delete_item(Key=payload['Key'])
-
-def echo(payload):
-    return payload
-
-operations = {
-    'create': create,
-    'read': read,
-    'update': update,
-    'delete': delete,
-    'echo': echo,
-}
 
 def lambda_handler(event, context):
-    '''Provide an event that contains the following keys:
-      - operation: one of the operations in the operations dict below
-      - payload: a JSON object containing parameters to pass to the 
-        operation being performed
-    '''
+    method = event["httpMethod"]
     
-    operation = event['operation']
-    payload = event['payload']
-    
-    if operation in operations:
-        return operations[operation](payload)
-        
+    if method == "GET":
+        return get(event, context)
+    elif method == "POST":
+        return post(event, context)
+    elif method == "PUT":
+        return put(event, context)
+    elif method == "DELETE":
+        return delete(event, context)
     else:
-        raise ValueError(f'Unrecognized operation "{operation}"')
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"error": "Unsupported method"})
+        }
+        
+def get(event, context):
+    id = event["queryStringParameters"]["id"]
+    Item = {
+        'TableName': table_name,
+        'Key': {
+            'id': {'S': id},
+        }
+    }
+    response = dynamodb.get_item(**Item)
+    
+    if 'Item' in response:
+        return {
+            "statusCode": 200,
+            "body": json.dumps(response)
+        }
+    else:
+        return {
+            "statusCode": 404,
+            "body": json.dumps({"error": "Item not found"})
+        }

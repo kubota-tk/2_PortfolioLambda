@@ -28,18 +28,19 @@ def get(event, context):
     Item = {
         'TableName': table_name,
         'Key': {
-            'id': {'S': id},
+            'id': {'S': id}
         }
     }
     response = dynamodb.get_item(**Item)
-    
+
     if 'Item' in response:
         return {
             "statusCode": 200,
-            "body": json.dumps(response)
+	        "body": json.dumps(response)            
         }
     else:
         return {
             "statusCode": 404,
             "body": json.dumps({"error": "Item not found"})
         }
+

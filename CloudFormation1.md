@@ -20,7 +20,7 @@
 ![2.3_cloudformation3](images1/2.3_cloudformation3.png)
 
 template  
- - [**resources.yml**](/CloudFormation/CloudFormation1/resources.yml)  
+ - [**resources.yml**](/CloudFormation/CloudFormation2/resources.yml)  
 
 
 
@@ -30,7 +30,7 @@ template
 ![3.1_s3](images1/3.1_s3.png)  
 
 template  
- - [**official_lambda_function_url.zip**](/LambdaFunction/python/official_lambda_function_url.zip)
+ - [**official_lambda_function_url.py**](/LambdaFunction/python/official_lambda_function_url.py)
 
 
 ## 4.実施結果  
@@ -38,7 +38,10 @@ template
 &emsp;一度目はidをDynamoDBに登録していないので、「Item not found」と結果が返る。
 ![4.1_result1](images1/4.1_result1.png)  
 
-![4.2_result2](images1/4.2_result2.png)  
+![4.2_result2](images1/4.2_result2.png)   
+
+&emsp;DynamoDBテーブルにidを登録した後、ブラウザからURLで、 DynamoDBのidを検索する。
+&emsp;検索したidと、これに紐づく値が結果として返る。  
 
 ![4.3_result3](images1/4.3_result3.png)  
 

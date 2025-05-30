@@ -147,7 +147,7 @@ Resources:
       HttpMethod: GET
       Integration:
         Type: AWS_PROXY
-        IntegrationHttpMethod: GET
+        IntegrationHttpMethod: POST
         Credentials: !GetAtt ApiGatewayLambdaInvocationRole.Arn
         IntegrationResponses:
           - StatusCode: 200
@@ -160,12 +160,13 @@ Resources:
           - Region: !Sub ${AWS::Region} # AWSリージョン
             Service: lambda # AWS のサービス
             ActionType: path # アクションタイプ
-            ServiceApi: !Sub 2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Lambda}/invocations # アクション名/パスオーバーライド
+            ServiceApi: !Sub 2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Lambda}/invocations # アクション名/パスオーバーライド    
       MethodResponses:
         - StatusCode: 200
           ResponseModels:
             application/json: Empty
-    DependsOn: ApiResource
+    DependsOn: 
+      - ApiResource
 
   Deployment:
     Type: AWS::ApiGateway::Deployment

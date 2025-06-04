@@ -2,7 +2,7 @@
 
 ## 概要
 
-* API Gateway（REST API）,Lambda,DynamoDBの連携した環境を、CircleCI,CloudFormationを使って自動構築する。本環境を構築することが目的であり、Lambda関数はAWS公式チュートリアル（https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/services-apigateway-tutorial.html）のものを利用した。  
+* API Gateway（REST API）,Lambda,DynamoDBの連携した環境を、CircleCI,CloudFormationを使って自動構築する。本環境を構築することが目的であり、Lambda関数はAWS公式チュートリアルのものを利用した。（https://docs.aws.amazon.com/ja_jp/lambda/latest/dg/services-apigateway-tutorial.html）  
 &emsp;同Lambda関数は、curlコマンドを利用して、DynamoDB テーブルの作成、読み取り、更新、および削除 (CRUD) 操作を実行します。なお同Lambda関数はS3に保管されているものとする。  
 ![0.1_構成図](images1/0.1_構成図.png)  
 
@@ -35,7 +35,8 @@ template
 
 
 ## 4.実施結果  
-&emsp;API GatewayのURLの確認と、CURLコマンドでPOST（作成）を実行して、DynamoDBのステージにid(キー)とnumberを入力する。
+&emsp;API GatewayのURLの確認と、CURLコマンドでPOST（作成）を実行して、DynamoDBのステージにid(キー)とnumberを入力する。  
+
 ![4.1_result1](images1/4.1_result1.png)  
 
 ![4.2_result2](images1/4.2_result2.png)   

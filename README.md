@@ -2,10 +2,10 @@
 
 ## 概要
 
-* API GatewayとLambdaを使った環境構築について、CloudFormationでテンプレート化したものを複数記録。
+* API GatewayとLambdaを使った環境構築について、CloudFormationでテンプレート化したものを複数記録。  
 &emsp;詳細は以下のとおり、別記。
 
-##CircleCIの利用
+## CircleCIの利用
 &emsp;次のとおり、workflowで環境構築を自動化  
 &emsp;workflowの内容
 1. リポジトリにコードをpush
